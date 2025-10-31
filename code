@@ -1,0 +1,94 @@
+import hashlib
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+HASH_ALGORITHM = 'sha256'
+
+def hash_message(message_text):
+    if not message_text:
+        return None
+    try:
+        encoded_message = message_text.encode('utf-8')
+        return hashlib.new(HASH_ALGORITHM, encoded_message).hexdigest()
+    except Exception:
+        return None
+
+class MessageHasherApp:
+    def __init__(self, master):
+        self.master = master
+        master.title(f"Message Integrity Checker ({HASH_ALGORITHM.upper()})")
+        master.resizable(False, False)
+
+        self.sender_msg = tk.StringVar()
+        self.sender_hash_display = tk.StringVar(value="N/A (Click Calculate)")
+        self.receiver_msg = tk.StringVar()
+        self.result_display = tk.StringVar(value="Status: Ready for Verification")
+
+        style = ttk.Style()
+        style.configure('TFrame', padding=10)
+        style.configure('TLabel', font=('Arial', 10))
+        style.configure('TButton', font=('Arial', 10, 'bold'))
+        style.configure('Hash.TLabel', font=('Courier', 10), foreground='darkblue')
+
+        main_frame = ttk.Frame(master, padding="15 15 15 15")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Secure Message Hashing Simulation", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        sender_frame = ttk.LabelFrame(main_frame, text="1. Sender Action (Original Message)", padding="10")
+        sender_frame.pack(fill='x', pady=10)
+        
+        ttk.Label(sender_frame, text="Message to Send:").pack(anchor='w')
+        ttk.Entry(sender_frame, textvariable=self.sender_msg, width=60).pack(fill='x', pady=5)
+        
+        ttk.Button(sender_frame, text="Calculate Sender Hash", command=self.calculate_sender_hash).pack(pady=5)
+        
+        ttk.Label(sender_frame, text=f"Generated {HASH_ALGORITHM.upper()} Hash:").pack(anchor='w', pady=(5, 0))
+        ttk.Label(sender_frame, textvariable=self.sender_hash_display, style='Hash.TLabel', wraplength=450).pack(anchor='w')
+
+        receiver_frame = ttk.LabelFrame(main_frame, text="2. Receiver Verification (Simulated Transit)", padding="10")
+        receiver_frame.pack(fill='x', pady=10)
+
+        ttk.Label(receiver_frame, text="Message Received (Paste Here):").pack(anchor='w')
+        ttk.Entry(receiver_frame, textvariable=self.receiver_msg, width=60).pack(fill='x', pady=5)
+        
+        ttk.Button(receiver_frame, text="VERIFY MESSAGE INTEGRITY", command=self.verify_integrity, style='TButton').pack(pady=10)
+        
+        result_frame = ttk.LabelFrame(main_frame, text="3. Verification Result", padding="10")
+        result_frame.pack(fill='x', pady=10)
+
+        ttk.Label(result_frame, textvariable=self.result_display, font=('Arial', 12, 'bold')).pack(pady=5)
+
+    def calculate_sender_hash(self):
+        hash_val = hash_message(self.sender_msg.get())
+        if hash_val:
+            self.sender_hash_display.set(hash_val)
+            self.result_display.set("Status: Sender Hash Calculated. Ready to check received message.")
+        else:
+            self.sender_hash_display.set("N/A (Enter message)")
+            self.result_display.set("ERROR: Sender message cannot be empty.")
+
+    def verify_integrity(self):
+        sender_hash = self.sender_hash_display.get()
+        received_msg = self.receiver_msg.get()
+        
+        if sender_hash == "N/A (Click Calculate)" or not sender_hash:
+            self.result_display.set("ERROR: Calculate the sender's hash first.")
+            return
+
+        if not received_msg:
+            self.result_display.set("ERROR: Received message field is empty.")
+            return
+
+        receiver_calculated_hash = hash_message(received_msg)
+
+        if sender_hash == receiver_calculated_hash:
+            self.result_display.set("VERIFIED: Message integrity is INTACT! (Hashes Match)")
+        else:
+            self.result_display.set("COMPROMISED: HASH MISMATCH DETECTED! (Tampering Occurred)")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = MessageHasherApp(root)
+    root.mainloop()
